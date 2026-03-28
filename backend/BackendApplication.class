@@ -1,0 +1,35 @@
+package com.example.airesume.model;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Data
+@Entity
+@Table(name = "analysis_results")
+public class AnalysisResult {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "resume_id")
+    private Resume resume;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "job_id")
+    private Job job;
+
+    private Double matchPercentage;
+
+    @Column(columnDefinition = "TEXT")
+    private String matchedSkills; // JSON string of list
+
+    @Column(columnDefinition = "TEXT")
+    private String missingSkills; // JSON string of list
+
+    @Column(columnDefinition = "TEXT")
+    private String suggestions; 
+
+    private LocalDateTime analyzedAt = LocalDateTime.now();
+}

@@ -1,0 +1,22 @@
+package com.example.airesume.model;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Data
+@Entity
+@Table(name = "resumes")
+public class Resume {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String candidateName;
+    private String originalFileName;
+    
+    @Column(columnDefinition = "LONGTEXT")
+    private String extractedText;
+
+    private LocalDateTime uploadDate = LocalDateTime.now();
+}

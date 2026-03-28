@@ -1,0 +1,84 @@
+package com.example.airesume.service;
+
+import org.springframework.stereotype.Service;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+public class NLPMatchService {
+
+    private static final Set<String> STOP_WORDS = Set.of(
+        "the", "and", "a", "to", "of", "in", "i", "is", "that", "it", "on", "you", "this", "for", "but", "with", "are", "have", "be", "at", "or", "as", "was", "so", "if", "out", "not", "can", "has", "will", "from", "by", "an"
+    );
+
+    public MatchResult analyze(String resumeText, String requiredSkillsText) {
+        Set<String> resumeTokens = tokenize(resumeText);
+        Set<String> jobTokens = tokenize(requiredSkillsText);
+        
+        Set<String> matchedSkills = new HashSet<>();
+        Set<String> missingSkills = new HashSet<>();
+        
+        for (String jobToken : jobTokens) {
+            if (resumeTokens.contains(jobToken)) {
+                matchedSkills.add(jobToken);
+            } else {
+                missingSkills.add(jobToken);
+            }
+        }
+        
+        double matchPercentage = 0;
+        if (!jobTokens.isEmpty()) {
+            matchPercentage = ((double) matchedSkills.size() / jobTokens.size()) * 100.0;
+        } else {
+            matchPercentage = 100.0; // If no specific skills were required, it's a match.
+        }
+
+        String suggestions = generateSuggestions(missingSkills, matchPercentage);
+
+        return new MatchResult(
+            Math.round(matchPercentage * 100.0) / 100.0,
+            new ArrayList<>(matchedSkills),
+            new ArrayList<>(missingSkills),
+            suggestions
+        );
+    }
+
+    private Set<String> tokenize(String text) {
+        if (text == null) return Collections.emptySet();
+        // Just extract words as a naive approach.
+        // A better approach would be extracting multi-word skills like "machine learning" from a predefined dictionary.
+        String[] words = text.toLowerCase().replaceAll("[^a-z0-9]", " ").split("\\s+");
+        return Arrays.stream(words)
+            .filter(w -> w.length() > 2)
+            .filter(w -> !STOP_WORDS.contains(w))
+            .collect(Collectors.toSet());
+    }
+
+    private String generateSuggestions(Set<String> missingSkills, double matchPercentage) {
+        if (missingSkills.isEmpty()) {
+            return "Perfect match! Your resume covers all required skills.";
+        }
+        
+        if (matchPercentage > 80) {
+            return "Strong match! Consider highlighting your experience with: " + String.join(", ", missingSkills) + " to cover all bases.";
+        } else if (matchPercentage > 50) {
+            return "Good potential. You should acquire or explicitly mention these missing skills in your resume: " + String.join(", ", missingSkills);
+        } else {
+            return "Significant skill gap. Focus on learning: " + String.join(", ", missingSkills);
+        }
+    }
+
+    public static class MatchResult {
+        public double matchPercentage;
+        public List<String> matchedSkills;
+        public List<String> missingSkills;
+        public String suggestions;
+
+        public MatchResult(double matchPercentage, List<String> matchedSkills, List<String> missingSkills, String suggestions) {
+            this.matchPercentage = matchPercentage;
+            this.matchedSkills = matchedSkills;
+            this.missingSkills = missingSkills;
+            this.suggestions = suggestions;
+        }
+    }
+}
